@@ -1,81 +1,126 @@
-package org.owasp.wrongsecrets;
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Text.Json;
+using System.Threading.Tasks;
 
-import java.util.Set;
-import lombok.extern.slf4j.Slf4j;
-import nz.net.ultraq.thymeleaf.layoutdialect.LayoutDialect;
-import org.owasp.wrongsecrets.asciidoc.AsciiDocGenerator;
-import org.owasp.wrongsecrets.asciidoc.AsciiDoctorTemplateResolver;
-import org.owasp.wrongsecrets.asciidoc.PreCompiledGenerator;
-import org.owasp.wrongsecrets.asciidoc.TemplateGenerator;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.context.ApplicationContext;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
-import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
-import org.thymeleaf.extras.springsecurity6.dialect.SpringSecurityDialect;
-import org.thymeleaf.spring6.SpringTemplateEngine;
-import org.thymeleaf.spring6.templateresolver.SpringResourceTemplateResolver;
-import org.thymeleaf.spring6.view.ThymeleafViewResolver;
-import org.thymeleaf.templatemode.TemplateMode;
-import org.thymeleaf.templateresolver.FileTemplateResolver;
-import org.thymeleaf.templateresolver.ITemplateResolver;
-
-/** Used to generate and return all the html in thymeleaf and convert asciidoc to html. */
-@Configuration
-@Slf4j
-public class MvcConfiguration implements WebMvcConfigurer {
-
-  private static final String UTF8 = "UTF-8";
-
-  @Bean
-  public ITemplateResolver springThymeleafTemplateResolver(ApplicationContext applicationContext) {
-    SpringResourceTemplateResolver resolver = new SpringResourceTemplateResolver();
-    resolver.setPrefix("classpath:/templates/");
-    resolver.setSuffix(".html");
-    resolver.setTemplateMode(TemplateMode.HTML);
-    resolver.setOrder(2);
-    resolver.setCacheable(false);
-    resolver.setCharacterEncoding(UTF8);
-    resolver.setApplicationContext(applicationContext);
-    return resolver;
-  }
-
-  @Bean
-  public ThymeleafViewResolver viewResolver(SpringTemplateEngine templateEngine) {
-    ThymeleafViewResolver viewResolver = new ThymeleafViewResolver();
-    viewResolver.setTemplateEngine(templateEngine);
-    viewResolver.setOrder(1);
-    viewResolver.setViewNames(new String[] {".html", ".xhtml"});
-    return viewResolver;
-  }
-
-  @Bean
-  public TemplateGenerator generator(@Value("${asciidoctor.enabled}") boolean asciiDoctorEnabled) {
-    if (asciiDoctorEnabled) {
-      return new AsciiDocGenerator();
+namespace ComprehensiveCSharpExample
+{
+    // Interface definition
+    public interface ILogger
+    {
+        void Log(string message);
     }
-    return new PreCompiledGenerator();
-  }
 
-  @Bean
-  public AsciiDoctorTemplateResolver asciiDoctorTemplateResolver(TemplateGenerator generator) {
-    AsciiDoctorTemplateResolver resolver = new AsciiDoctorTemplateResolver(generator);
-    resolver.setCacheable(false);
-    resolver.setOrder(1);
-    resolver.setCharacterEncoding(UTF8);
-    return resolver;
-  }
+    // ConsoleLogger implements ILogger
+    public class ConsoleLogger : ILogger
+    {
+        public void Log(string message)
+        {
+            Console.WriteLine($"[LOG]: {message}");
+        }
+    }
 
-  @Bean
-  public SpringTemplateEngine thymeleafTemplateEngine(
-      ITemplateResolver springThymeleafTemplateResolver,
-      FileTemplateResolver asciiDoctorTemplateResolver) {
-    SpringTemplateEngine engine = new SpringTemplateEngine();
-    engine.setEnableSpringELCompiler(true);
-    engine.addDialect(new LayoutDialect());
-    engine.addDialect(new SpringSecurityDialect());
-    engine.setTemplateResolvers(
-        Set.of(asciiDoctorTemplateResolver, springThymeleafTemplateResolver));
-    return engine;
-  }
+    // Base class
+    public abstract class Person
+    {
+        public string Name { get; set; }
+        public int Age { get; set; }
+
+        public abstract void DisplayInfo();
+    }
+
+    // Derived class
+    public class Student : Person
+    {
+        public int Grade { get; set; }
+
+        public override void DisplayInfo()
+        {
+            Console.WriteLine($"Student: {Name}, Age: {Age}, Grade: {Grade}");
+        }
+    }
+
+    // Another derived class
+    public class Teacher : Person
+    {
+        public string Subject { get; set; }
+
+        public override void DisplayInfo()
+        {
+            Console.WriteLine($"Teacher: {Name}, Age: {Age}, Subject: {Subject}");
+        }
+    }
+
+    // Utility class for file operations
+    public static class FileHelper
+    {
+        public static async Task WriteToFileAsync(string filePath, string content)
+        {
+            using (StreamWriter writer = new StreamWriter(filePath, append: true))
+            {
+                await writer.WriteLineAsync(content);
+            }
+        }
+
+        public static async Task<string> ReadFromFileAsync(string filePath)
+        {
+            if (!File.Exists(filePath))
+            {
+                throw new FileNotFoundException($"The file {filePath} does not exist.");
+            }
+
+            using (StreamReader reader = new StreamReader(filePath))
+            {
+                return await reader.ReadToEndAsync();
+            }
+        }
+    }
+
+    // Main program
+    class Program
+    {
+        static async Task Main(string[] args)
+        {
+            ILogger logger = new ConsoleLogger();
+
+            // Create some data
+            List<Person> people = new List<Person>
+            {
+                new Student { Name = "Alice", Age = 20, Grade = 90 },
+                new Student { Name = "Bob", Age = 22, Grade = 85 },
+                new Teacher { Name = "Dr. Smith", Age = 45, Subject = "Mathematics" }
+            };
+
+            // Display information
+            foreach (var person in people)
+            {
+                person.DisplayInfo();
+            }
+
+            // LINQ example: Find all students older than 21
+            var olderStudents = people.OfType<Student>().Where(s => s.Age > 21);
+            logger.Log("Students older than 21:");
+            foreach (var student in olderStudents)
+            {
+                logger.Log($"{student.Name}, Age: {student.Age}, Grade: {student.Grade}");
+            }
+
+            // Serialize data to JSON
+            string json = JsonSerializer.Serialize(people, new JsonSerializerOptions { WriteIndented = true });
+            logger.Log("Serialized JSON:");
+            logger.Log(json);
+
+            // File I/O example
+            string filePath = "people_data.txt";
+            await FileHelper.WriteToFileAsync(filePath, json);
+            logger.Log($"Data written to file: {filePath}");
+
+            // Read the data back
+            string fileContent = await FileHelper.ReadFromFileAsync(filePath);
+            logger.Log("Data read from file:");
+            logger.Log(fileContent);
+        }
+    }
 }
